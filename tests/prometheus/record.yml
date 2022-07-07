@@ -1,0 +1,5 @@
+groups:
+  - name: limedrop_gateway
+    rules:
+      - record: limedrop_gateway:cpu_usage
+        expr: sum(rate(node_cpu_seconds_total{instance='limedrop-gateway:9100',mode!='idle'}[5m])) * 100 / 2
