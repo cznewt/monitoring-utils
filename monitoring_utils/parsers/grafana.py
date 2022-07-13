@@ -99,7 +99,7 @@ def get_dashboard_data(board_file, excludes=[]):
         )
     )
     if 'dashboard-variable' not in excludes:
-        for variable in dashboard["templating"].get("list", []):
+        for variable in dashboard.get("templating", {}).get("list", []):
             if variable["type"] == "query":
                 if type(variable["query"]) == dict:
                     query = variable["query"]["query"]
@@ -113,7 +113,7 @@ def get_dashboard_data(board_file, excludes=[]):
                 query = clean_dashboard_variable(query)
                 metrics += parse_promql(query)
     if 'dashboard-annotation' not in excludes:
-        for annotation in dashboard["annotations"].get("list", []):
+        for annotation in dashboard.get("annotations", {}).get("list", []):
             if "expr" in annotation:
                 query = annotation["expr"]
                 logging.debug(
