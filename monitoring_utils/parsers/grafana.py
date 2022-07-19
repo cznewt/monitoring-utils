@@ -100,7 +100,7 @@ def get_dashboard_data(board_file, excludes=[]):
     )
     if 'dashboard-variable' not in excludes:
         for variable in dashboard.get("templating", {}).get("list", []):
-            if variable["type"] == "query":
+            if variable.get("type", "") == "query":
                 if type(variable.get("query", None)) == dict:
                     query = variable["query"]["query"]
                 else:
