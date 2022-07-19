@@ -18,3 +18,12 @@ def clean_comments(query):
         if not line.startswith("#"):
             output_lines.append(line)
     return " ".join(output_lines)
+
+
+def guess_query_language(query):
+    type = 'promql'
+    if query.lower().startswith('select '):
+        type = 'sql'
+    if query.lower().startswith('{\"find\":'):
+        type = 'lucene'
+    return type

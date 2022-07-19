@@ -36,6 +36,8 @@ def parse_yaml(yaml_file):
 def encode_json(data):
     return json.dumps(data)
 
+def get_file_name(path):
+    return os.path.basename(path)
 
 def guess_file_type(file):
     doc = parse_yaml(file)

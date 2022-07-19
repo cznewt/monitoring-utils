@@ -5,7 +5,7 @@ from .generators.grafana import create_dashboard, convert_panel
 from .generators.doc import generate_doc
 from .parsers.grafana import get_dashboard_data, get_dashboard_live_data, get_panel_screenshot
 from .parsers.prom import get_groups_data
-from .utils import guess_file_type, write_image
+from .utils import guess_file_type, get_file_name, write_image
 
 
 def get_info_by_path(path):
@@ -25,7 +25,7 @@ def get_info_by_path(path):
     return "\n".join(output)
 
 
-def find_metrics_by_path(path, format="yaml", excludes=[]):
+def find_metrics_by_path(path, format="yaml", exclude_sources=[], exclude_files=[]):
     files = glob.glob("{}/*.*".format(path))
     dasbhoard_metrics = []
     rules_metrics = []
@@ -33,14 +33,17 @@ def find_metrics_by_path(path, format="yaml", excludes=[]):
     if files == None:
         return total_metrics
     for file in files:
+        if get_file_name(file) in exclude_files:
+            logging.debug('Excluded file {}'.format(file))
+            continue
         type = guess_file_type(file)
         logging.debug('Found resource file {} of "{}" type'.format(file, type))
         if type == 'dashboard':
-            dashboard = get_dashboard_data(file, excludes)
+            dashboard = get_dashboard_data(file, exclude_sources)
             dasbhoard_metrics += dashboard["metrics"]
             total_metrics += dashboard["metrics"]
         if type == 'rules':
-            groups = get_groups_data(file, excludes)
+            groups = get_groups_data(file, exclude_sources)
             rules_metrics += groups["metrics"]
             total_metrics += groups["metrics"]
 
@@ -68,7 +71,7 @@ def export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid
     dashboard = get_dashboard_live_data(
         grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, range)
     grafana_panel_id = 1
-    
+
     ct = datetime.datetime.now()
     ago = 3600 * 24 * 7
     raw_end = int(ct.timestamp())

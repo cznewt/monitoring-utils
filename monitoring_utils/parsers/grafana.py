@@ -3,6 +3,7 @@ import requests
 import logging
 from monitoring_utils.utils import parse_yaml
 from monitoring_utils.parsers.prom import parse_promql
+from monitoring_utils.parsers.utils import guess_query_language
 
 
 def clean_dashboard_variable(query):
@@ -102,14 +103,18 @@ def get_dashboard_data(board_file, excludes=[]):
         for variable in dashboard.get("templating", {}).get("list", []):
             if variable.get("type", "") == "query":
                 if type(variable.get("query", None)) == dict:
-                    query = variable["query"]["query"]
+                    query = variable["query"].get("query", "")
                 else:
                     query = variable.get("query", "")
-                logging.debug(
-                    "Found '{}' variable ...".format(
-                        variable.get("name", "unnamed"))
-                )
+                query_lang = guess_query_language(query)
+                if query_lang != 'promql':
+                    logging.debug("Possible {} query: {}".format(query_lang, query))
+                    query = ""
                 if query != "":
+                    logging.debug(
+                        "Found '{}' variable ...".format(
+                            variable.get("name", "unnamed"))
+                    )
                     logging.debug("Found query: {}".format(query))
                     query = clean_dashboard_variable(query)
                     metrics += parse_promql(query)

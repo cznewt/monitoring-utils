@@ -145,17 +145,22 @@ def get_resource_info(path):
 @click.option(
     "--format", default="string", help="Format of the output [string/json]")
 @click.option(
-    "--excludes",
+    "--exclude_sources",
     default="none",
     help="Exclude sources from parsing, possible: dashboard-variable, dashboard-annotation, recording-rule-expr, recording-rule-name, alerting-rule-expr",
 )
-def extract_prometheus_metrics(path, format, excludes):
+@click.option(
+    "--exclude_files",
+    default="none",
+    help="Exclude sources from parsing, possible: dashboard-variable, dashboard-annotation, recording-rule-expr, recording-rule-name, alerting-rule-expr",
+)
+def extract_prometheus_metrics(path, format, exclude_sources, exclude_files):
     """Get metric names from Grafana dashboard targets and Prometheus rule expressions."""
     set_logger()
     logging.debug(
         "Searching path `{}` for metrics ...".format(path)
     )
-    metrics = find_metrics_by_path(path, format, excludes.split(','))
+    metrics = find_metrics_by_path(path, format, exclude_sources.split(','), exclude_files.split(','))
     if format == 'string':
         print('\n'.join(metrics))
     else:
