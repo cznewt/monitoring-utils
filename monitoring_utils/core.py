@@ -58,7 +58,6 @@ def convert_panels_by_path(source_path, build_path, format, layout):
                 'Found resource file {} of "{}" type'.format(board_file, type))
             dashboard = get_dashboard_data(board_file)
             for panel in dashboard['panels']:
-                # print(panel)
                 convert_panel(panel, format)
 
     if len(board_files) == 0:
