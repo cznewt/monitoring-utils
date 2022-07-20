@@ -135,6 +135,13 @@ def get_dashboard_data(board_file, excludes=[]):
                     panel.get("title", "untitled")))
                 panels.append(panel)
                 metrics += get_panel_metrics(panel)
+            if "panels" in panel:
+                for subpanel in panel.get("panels", []):
+                    if "targets" in subpanel:
+                        logging.debug("Found '{}' panel ...".format(
+                            subpanel.get("title", "untitled")))
+                        panels.append(subpanel)
+                        metrics += get_panel_metrics(subpanel)
         if dashboard.get("rows", []) == None:
             logging.error("Dashboard {} has Null row".format(board_file))
             dashboard["rows"] = []
