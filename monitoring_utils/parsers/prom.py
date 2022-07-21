@@ -134,6 +134,7 @@ final_keywords = [
     "time",
     "timestamp",
     "topk",
+    "values",
     "vector",
     "w",
     "y",
