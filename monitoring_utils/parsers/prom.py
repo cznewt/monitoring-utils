@@ -111,6 +111,7 @@ final_keywords = [
     "predict_linear",
     "present_over_time",
     "quantile_over_time",
+    "query_result",
     "rad",
     "rate",
     "resets",
