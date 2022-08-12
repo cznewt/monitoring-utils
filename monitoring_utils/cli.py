@@ -7,6 +7,10 @@ from .core import export_panels_from_grafana, convert_panels_by_path, \
     get_info_by_path, find_metrics_by_path, generate_report_from_grafana
 from .utils import set_logger, encode_json
 
+from .query.prometheus import PrometheusQuery, PrometheusSearch
+from .query.influxdb import InfluxdbQuery, InfluxdbSearch
+from .query.graphite import GraphiteQuery, GraphiteSearch
+
 
 @click.command()
 @click.option(
@@ -78,7 +82,43 @@ def generate_grafana_report(grafana_url, grafana_token, grafana_dashboard_uid, g
     logging.debug(
         "Generating report from `{}` dashboard ...".format(grafana_url)
     )
-    generate_report_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, build_path, format, range)
+    generate_report_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid,
+                                 grafana_dashboard_slug, build_path, format, range)
+
+
+@click.command()
+@click.option(
+    "--engine",
+    default="prometheus",
+    help="Engine [prometheus, elasticsearch, influxdb]",
+)
+@click.option("--url", default=None, help="Server URL")
+@click.option("--user", default=None, help="Authentication username")
+@click.option("--password", default=None, help="Authentication password")
+@click.option("--partition", default=None, help="Data partition")
+@click.option("--search", default=None, help="Search time-series")
+@click.option("--start", default=None, help="Time range start")
+@click.option("--end", default=None, help="Time range end")
+def search_data(engine, url, user, password, partition, search, start, end):
+    data = {
+        "search": [search],
+        "url": url,
+        "user": user,
+        "password": password,
+        "partition": partition,
+        "start": start,
+        "end": end,
+    }
+
+    if engine == "prometheus":
+        search = PrometheusSearch(**data)
+    elif engine == "influxdb":
+        search = InfluxdbSearch(**data)
+    elif engine == "graphite":
+        search = GraphiteSearch(**data)
+    else:
+        raise Exception("Unsupported engine {}".format(engine))
+    print(search.get())
 
 
 @click.command()
@@ -101,6 +141,10 @@ def generate_grafana_report(grafana_url, grafana_token, grafana_dashboard_uid, g
     help="Grafana dashboard slug.",
 )
 @click.option(
+    "--grafana-dashboard-params",
+    help="Grafana dashboard params.",
+)
+@click.option(
     "--build-path",
     default="./build",
     help="Path to save exported panels.",
@@ -115,13 +159,18 @@ def generate_grafana_report(grafana_url, grafana_token, grafana_dashboard_uid, g
     default="7d",
     help="Range for the panel data",
 )
-def export_grafana_panels(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, build_path, format, range):
+def export_grafana_panels(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_dashboard_params, build_path, format, range):
     """Export Grafana dashboard panels data or image."""
     set_logger()
     logging.debug(
         "Searching `{}` for panels to export ...".format(grafana_url)
     )
-    export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, build_path, format, range)
+    if grafana_dashboard_params is None:
+        params = []
+    else:
+        params = grafana_dashboard_params.split(',')
+    export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid,
+                               grafana_dashboard_slug, params, build_path, format, range)
 
 
 @click.command()
@@ -160,7 +209,8 @@ def extract_prometheus_metrics(path, format, exclude_sources, exclude_files):
     logging.debug(
         "Searching path `{}` for metrics ...".format(path)
     )
-    metrics = find_metrics_by_path(path, format, exclude_sources.split(','), exclude_files.split(','))
+    metrics = find_metrics_by_path(
+        path, format, exclude_sources.split(','), exclude_files.split(','))
     if format == 'string':
         print('\n'.join(metrics))
     else:

@@ -1,10 +1,10 @@
 import glob
 import logging
 import datetime
-from .generators.grafana import create_dashboard, convert_panel
-from .generators.doc import generate_doc
-from .parsers.grafana import get_dashboard_data, get_dashboard_live_data, get_panel_screenshot
-from .parsers.prom import get_groups_data
+from .generator.grafana import create_dashboard, convert_panel
+from .generator.doc import generate_doc
+from .parser.grafana import get_dashboard_data, get_dashboard_live_data, get_panel_screenshot
+from .parser.prometheus import get_groups_data
 from .utils import guess_file_type, get_file_name, write_image
 
 
@@ -67,9 +67,9 @@ def convert_panels_by_path(source_path, build_path, format, layout):
         logging.error("No dashboards found at path {}!".format(source_path))
 
 
-def export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, build_path, format, range):
+def export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_dashboard_params, build_path, format, range):
     dashboard = get_dashboard_live_data(
-        grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, range)
+        grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_dashboard_params, range)
     grafana_panel_id = 1
 
     ct = datetime.datetime.now()
@@ -92,7 +92,7 @@ def export_panels_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid
                 write_image(image_path, screen)
 
 
-def generate_report_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, build_path, format, range):
+def generate_report_from_grafana(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_dashboard_params, build_path, format, range):
     dashboard = get_dashboard_live_data(
         grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, range)
 
