@@ -1,6 +1,7 @@
-from monitoring_utils.query.prometheus import get_labels
+from monitoring_utils.query.prometheus import get_label
 
 from math import floor
+import datetime
 
 import logging
 
@@ -12,48 +13,29 @@ logging.basicConfig(
 
 test_queries = [
     {
-        "query": """
-          ALERTS{alertstate="firing", cluster="cluster"}
-        """,
-        "result": ["ALERTS"],
-    },
-    {
-        "query": '(count(ALERTS{alertstate="firing", cluster_name="cluster}) by (cluster_name)) or (sum(up{job="federate", cluster_name="cluster}) by (cluster_name) - 1)',
-        "result": ["ALERTS", "up"],
-    },
-    {
-        "query": '1 - sum(:node_memory_MemFreeCachedBuffers:sum{cluster_name=~"cluster}) / sum(:node_memory_MemTotal:sum{cluster_name=~"cluster})',
-        "result": [
-            ":node_memory_MemTotal:sum",
-            ":node_memory_MemFreeCachedBuffers:sum",
-        ],
-    },
-    {
-        "query": 'node:node_cpu_utilisation:avg1m{cluster_name="cluster"} * node:node_num_cpu:sum{cluster_name="cluster"} / scalar(sum(node:node_num_cpu:sum{cluster_name="cluster"}))',
-        "result": [
-            "node:node_cpu_utilisation:avg1m",
-            "node:node_num_cpu:sum",
-            "node:node_num_cpu:sum",
-        ],
-    },
-    {
-        "query": 'sum(cluster_services:healthy_total{cluster_name=~"^gc[0-9].*"}) by (cluster_name)',
-        "result": ["cluster_services:healthy_total"],
-    },
-    {
-        "query": 'max(node_load1{job="kubernetes-node-exporter", cluster_name="cluster", instance="instance"})',
-        "result": ["node_load1"],
-    },
+        "url": "http://localhost:9090",
+        "queries": ["up"],
+        "label": "instance",
+        "range": "1h",
+        'step': 60,
+        'result': ['localhost:9090']
+    }
 ]
 
 for test_query in test_queries:
-    logging.info("Testing ...\n {}".format(test_query["query"]))
-    metrics = parse_promql(test_query["query"])
-    if set(metrics) == set(test_query["result"]):
-        logging.info("OK, found: {}\n".format(set(metrics)))
+    logging.info("Testing ...\n {}".format(test_query["queries"]))
+    range = test_query.pop('range')
+    test_query['end'] = datetime.datetime.now().timestamp()
+    test_query['start'] = (datetime.datetime.now() -
+                           datetime.timedelta(hours=1)).timestamp()
+
+    labels = get_label(test_query, "instance")
+
+    if set(labels) == set(test_query["result"]):
+        logging.info("OK, found: {}\n".format(set(labels)))
     else:
         logging.info(
             "Failed, found: {}, expected: {}\n".format(
-                set(metrics), set(test_query["result"])
+                set(labels), set(test_query["result"])
             )
         )

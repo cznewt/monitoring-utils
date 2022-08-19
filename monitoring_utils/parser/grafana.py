@@ -2,8 +2,8 @@ import os
 import requests
 import logging
 from monitoring_utils.utils import parse_yaml
-from monitoring_utils.parsers.prom import parse_promql
-from monitoring_utils.parsers.utils import guess_query_language
+from monitoring_utils.parser.prometheus import parse_promql
+from monitoring_utils.parser.utils import guess_query_language
 
 
 def clean_dashboard_variable(query):
@@ -53,7 +53,7 @@ def get_dashboard_live_data(grafana_url, grafana_token, grafana_dashboard_uid, g
     return data
 
 
-def get_panel_screenshot(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_panel_id, start, end):
+def get_panel_screenshot(grafana_url, grafana_token, grafana_dashboard_uid, grafana_dashboard_slug, grafana_org_id, grafana_panel_id, start, end, width=1200, height=600, vars={}):
     data_url = '{}/render/d-solo/{}/{}'.format(
         grafana_url,
         grafana_dashboard_uid,
@@ -73,16 +73,17 @@ def get_panel_screenshot(grafana_url, grafana_token, grafana_dashboard_uid, graf
     }
 
     params = {
-        'orgId': 1,
+        'orgId': grafana_org_id,
         'refresh': '60s',
         'from': start,
         'to': end,
         'theme': 'light',
         'panelId': grafana_panel_id,
-        'width': 1200,
-        'height': 520,
+        'width': width,
+        'height': height,
         'tz': 'Europe/Prague'
     }
+    params.update(vars)
 
     r = requests.get(data_url, params=params,
                      headers=headers, allow_redirects=True)

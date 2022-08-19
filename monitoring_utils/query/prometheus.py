@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import datetime
-from libmetric.query import Query, InstantQuery, RangeQuery
-from libmetric.search import Search
+from monitoring_utils.query import Query, InstantQuery, RangeQuery
 
 PROMETHEUS_REPLY = "Prometheus API replied with error {}: {}"
 
@@ -22,14 +21,14 @@ class PrometheusQuery(Query):
         info = "Query info:\n".format(**self._info)
         info += "  Server URL: {url}\n".format(**self._info)
         if self.query == 'range':
-          info += "  Type: Range PromQL query\n".format(**self._info)
+            info += "  Type: Range PromQL query\n".format(**self._info)
         else:
-          info += "  Type: Instant PromQL query\n".format(**self._info)
-        info += "  Query: {query}\n".format(**self._info)        
+            info += "  Type: Instant PromQL query\n".format(**self._info)
+        info += "  Query: {query}\n".format(**self._info)
         if self.query == 'range':
-          info += "  Duration: {start} - {end}\n".format(**self._info)
+            info += "  Duration: {start} - {end}\n".format(**self._info)
         else:
-          info += "  Moment: {moment}\n".format(**self._info)
+            info += "  Moment: {moment}\n".format(**self._info)
         info += "  Step: {step}\n".format(**self._info)
         return info
 
@@ -59,13 +58,14 @@ class PrometheusRangeQuery(RangeQuery):
     def _process(self, response):
         if response["status"] == "error":
             raise Exception(
-                PROMETHEUS_REPLY.format(response["errorType"], response["error"])
+                PROMETHEUS_REPLY.format(
+                    response["errorType"], response["error"])
             )
-        data = response["data"]["result"]
-
-        for series in data:
+        self.raw_data = response["data"]["result"]
+        for series in self.raw_data:
             for values in series["values"]:
-                values[0] = pd.Timestamp(datetime.datetime.fromtimestamp(values[0]))
+                values[0] = pd.Timestamp(
+                    datetime.datetime.fromtimestamp(values[0]))
                 values[1] = float(values[1])
 
         np_data = [
@@ -76,12 +76,13 @@ class PrometheusRangeQuery(RangeQuery):
                 ),
                 np.array(series["values"]),
             )
-            for series in data
+            for series in self.raw_data
         ]
 
         series = []
         for query, serie in np_data:
-            frame = pd.DataFrame(serie[:, 1], index=serie[:, 0], columns=[query])
+            frame = pd.DataFrame(
+                serie[:, 1], index=serie[:, 0], columns=[query])
             series.append(frame)
         if len(series) > 0:
             return pd.concat(series, axis=1, join="inner")
@@ -107,12 +108,15 @@ class PrometheusInstantQuery(InstantQuery):
     def _process(self, response):
         if response["status"] == "error":
             raise Exception(
-                PROMETHEUS_REPLY.format(response["errorType"], response["error"])
+                PROMETHEUS_REPLY.format(
+                    response["errorType"], response["error"])
             )
-        data = response["data"]["result"]
-        for series in data:
+        self.raw_data = response["data"]["result"]
+
+        for series in self.raw_data:
             for values in [series["value"]]:
-                values[0] = pd.Timestamp(datetime.datetime.fromtimestamp(values[0]))
+                values[0] = pd.Timestamp(
+                    datetime.datetime.fromtimestamp(values[0]))
                 values[1] = float(values[1])
         np_data = [
             (
@@ -121,11 +125,12 @@ class PrometheusInstantQuery(InstantQuery):
                 ),
                 np.array([series["value"]]),
             )
-            for series in data
+            for series in self.raw_data
         ]
         series = []
         for query, serie in np_data:
-            frame = pd.DataFrame(serie[:, 1], index=serie[:, 0], columns=[query])
+            frame = pd.DataFrame(
+                serie[:, 1], index=serie[:, 0], columns=[query])
             series.append(frame)
         if len(series) > 0:
             return pd.concat(series, axis=1, join="inner")
@@ -133,17 +138,14 @@ class PrometheusInstantQuery(InstantQuery):
             return None
 
 
-class PrometheusSearch(Search):
-    def __init__(self, **kwargs):
-        super(PrometheusSearch, self).__init__(**kwargs)
-
-    def _url(self):
-        params = []
-        params += ["match[]={}".format(search) for search in self.search]
-        if self.start is not None:
-            params += ["start={}".format(self.start), "end={}".format(self.end)]
-        url = "/api/v1/series?" + "&".join(params)
-        return self.base_url + url
-
-    def _process(self, response):
-        print(response)
+def get_label(params, label):
+    query = PrometheusRangeQuery(
+        **params
+    )
+    query.data()
+    result = []
+    for serie in query.raw_data:
+        if label in serie['metric']:
+            if serie['metric'][label] not in result:
+                result.append(serie['metric'][label])
+    return(result)
