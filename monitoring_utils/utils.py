@@ -27,7 +27,14 @@ def set_logger():
 def parse_yaml(yaml_file):
     with open(yaml_file) as f:
         try:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            yaml_loaders = {
+                "CBaseLoader": yaml.CBaseLoader,
+                "CFullLoader": yaml.CFullLoader,
+                "BaseLoader": yaml.BaseLoader,
+                "FullLoader": yaml.FullLoader,
+            }
+            yaml_loader = yaml_loaders[os.environ.get("YAML_LOADER", "CBaseLoader")]
+            data = yaml.load(f, Loader=yaml_loader)
         except AttributeError:
             data = yaml.load(f)
     return data

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='monitoring_utils',
-    version='0.1',
+    version='0.2.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -11,6 +11,8 @@ setup(
         'pyyaml',
         'requests',
         'pdfkit',
+        'promqlpy',
+        'pandas',
     ],
     entry_points='''
         [console_scripts]

@@ -7,7 +7,7 @@ from .core import export_panels_from_grafana, convert_panels_by_path, \
     get_info_by_path, find_metrics_by_path, generate_report_from_grafana
 from .utils import set_logger, encode_json
 
-from .query.prometheus import PrometheusQuery, PrometheusSearch
+from .query.prometheus import PrometheusQuery #, PrometheusSearch
 from .query.influxdb import InfluxdbQuery, InfluxdbSearch
 from .query.graphite import GraphiteQuery, GraphiteSearch
 

@@ -1,14 +1,9 @@
-from monitoring_utils.parsers.prom import parse_promql
+#!/usr/bin/env python
+# encoding: utf-8
+
+from monitoring_utils.parser.prometheus import parse_promql
 
 from math import floor
-
-import logging
-
-logging.basicConfig(
-    format="%(asctime)s [%(levelname)-5.5s]  %(message)s",
-    level=logging.INFO,
-    handlers=[logging.StreamHandler()],
-)
 
 test_queries = [
     {
@@ -18,11 +13,11 @@ test_queries = [
         "result": ["ALERTS"],
     },
     {
-        "query": '(count(ALERTS{alertstate="firing", cluster_name="cluster}) by (cluster_name)) or (sum(up{job="federate", cluster_name="cluster}) by (cluster_name) - 1)',
+        "query": '(count(ALERTS{alertstate="firing", cluster_name="cluster"}) by (cluster_name)) or (sum(up{job="federate", cluster_name="cluster"}) by (cluster_name) - 1)',
         "result": ["ALERTS", "up"],
     },
     {
-        "query": '1 - sum(:node_memory_MemFreeCachedBuffers:sum{cluster_name=~"cluster}) / sum(:node_memory_MemTotal:sum{cluster_name=~"cluster})',
+        "query": '1 - sum(:node_memory_MemFreeCachedBuffers:sum{cluster_name=~"cluster"}) / sum(:node_memory_MemTotal:sum{cluster_name=~"cluster"})',
         "result": [
             ":node_memory_MemTotal:sum",
             ":node_memory_MemFreeCachedBuffers:sum",
@@ -62,13 +57,13 @@ test_queries = [
 ]
 
 for test_query in test_queries:
-    logging.info("Testing ...\n {}".format(test_query["query"]))
+    print("Testing {} ...".format(test_query["query"]))
     metrics = parse_promql(test_query["query"])
     if set(metrics) == set(test_query["result"]):
-        logging.info("OK, found: {}\n".format(set(metrics)))
+        print("OK, found: {}\n".format(set(metrics)))
     else:
-        logging.info(
-            "Failed, found: {}, expected: {}\n".format(
+        print(
+            "Failed, found: {}, expected: {}".format(
                 set(metrics), set(test_query["result"])
             )
         )
